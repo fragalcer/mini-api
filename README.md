@@ -13,3 +13,7 @@ To run this project make sure you run the following commands:
 `python manage.py loaddata plans/fixtures/initial_plans_fixture.yaml`
 
 `python manage.py createsuperuser`
+
+To run tests just run the command below inside the container:
+
+`python manage.py test`
