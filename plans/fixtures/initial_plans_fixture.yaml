@@ -1,0 +1,28 @@
+# This file contains all the default plans.
+- model: plans.plan
+  pk: 1
+  fields:
+    name: Basic
+    value:
+      thumbnail_200: true
+      thumbnail_400: false
+      original_image: false
+      temporary_link: false
+- model: plans.plan
+  pk: 2
+  fields:
+    name: Premium
+    value:
+      thumbnail_200: true
+      thumbnail_400: true
+      original_image: true
+      temporary_link: false
+- model: plans.plan
+  pk: 3
+  fields:
+    name: Enterprise
+    value:
+      thumbnail_200: true
+      thumbnail_400: true
+      original_image: true
+      temporary_link: true
