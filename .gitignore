@@ -131,3 +131,4 @@ dmypy.json
 /media/CACHE/
 /media/images/
 /data/
+.DS_Store
