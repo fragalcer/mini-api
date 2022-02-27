@@ -46,6 +46,13 @@ class UserImageListCreateAPIView(LoginRequiredMixin, ListCreateAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         response = super().post(request, *args, **kwargs)
+        if not request.user.plan.value['original_image']:
+            response.data.update({
+                "image": None
+            })
+        response.data.update({
+            "temporary_url": None
+        })
         if seconds:
             if not request.user.plan.value['temporary_link']:
                 return Response(
