@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
-    <content url="file://$MODULE_DIR$" />
+    <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/media/CACHE" />
+      <excludeFolder url="file://$MODULE_DIR$/media/images" />
+      <excludeFolder url="file://$MODULE_DIR$/data" />
+    </content>
     <orderEntry type="jdk" jdkName="Remote Python 3.10.2 Docker Compose (web at [/Users/franciscogallardo/PycharmProjects/mini-api/docker-compose.yml])" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
