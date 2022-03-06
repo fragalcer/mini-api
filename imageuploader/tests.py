@@ -3,9 +3,9 @@ from io import BytesIO
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.signing import TimestampSigner
 from django.test import Client, TestCase
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -61,61 +61,62 @@ class ApiTestCase(TestCase):
         response = self.api_client.post(
             reverse('user-images'), {"image": self.tomato_sauce_image}, format='multipart',
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue('thumbnail_200' in response.data)
         self.assertFalse(response.data['image'])
-        self.assertFalse(response.data['thumbnail_400'])
-        self.assertFalse(response.data['temporary_url'])
+        self.assertFalse('thumbnail_400' in response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_premium_plan(self):
         self.login_premium()
         response = self.api_client.post(
             reverse('user-images'), {"image": self.tomato_sauce_image}, format='multipart',
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue('thumbnail_200' in response.data)
         self.assertTrue('image' in response.data)
         self.assertTrue('thumbnail_400' in response.data)
-        self.assertFalse(response.data['temporary_url'])
+        self.assertTrue('temporary_url' not in response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_enterprise_plan(self):
         self.login_enterprise()
         response = self.api_client.post(
             reverse('user-images'), {"image": self.tomato_sauce_image, "seconds": 300}, format='multipart',
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue('thumbnail_200' in response.data)
         self.assertTrue('image' in response.data)
         self.assertTrue('thumbnail_400' in response.data)
         self.assertTrue('temporary_url' in response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_validation_for_seconds(self):
         self.login_enterprise()
         response = self.api_client.post(
             reverse('user-images'), {"image": self.tomato_sauce_image, "seconds": 3}, format='multipart',
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
-            response.data, '3 is not a valid amount of time. Only between 300 and 30000 seconds is accepted.'
+            response.data[0].__str__(),
+            '3 is not a valid amount of time. Only between 300 and 30000 seconds is accepted.'
         )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_expiration_for_link(self):
         self.login_enterprise()
         response_post = self.api_client.post(
             reverse('user-images'), {"image": self.tomato_sauce_image, "seconds": 300}, format='multipart',
         )
-        self.assertEqual(response_post.status_code, status.HTTP_201_CREATED)
         last_temporary_link = TemporaryLink.objects.last()
         response_get = self.api_client.get(
-            reverse('expirable-image-template', args=[response_post.data['id'], last_temporary_link.key]),
+            reverse('temporary-url', args=[last_temporary_link.key]),
             format='multipart'
         )
         self.assertEqual(response_get.status_code, status.HTTP_200_OK)
-        last_temporary_link.expiry_date = timezone.now()
+        timestamp_signer = TimestampSigner()
+        last_temporary_link.key = timestamp_signer.sign_object({"image": last_temporary_link.image.pk, "max_age": 0})
         last_temporary_link.save()
         response = self.api_client.get(
-            reverse('expirable-image-template', args=[response_post.data['id'], last_temporary_link.key]),
+            reverse('temporary-url', args=[last_temporary_link.key]),
             format='multipart'
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data, 'Your temporary link has expired.')
+        self.assertEqual(response_post.status_code, status.HTTP_201_CREATED)

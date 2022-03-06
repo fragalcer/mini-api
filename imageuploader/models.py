@@ -1,8 +1,6 @@
-import uuid
-
 from django.contrib.auth.models import AbstractBaseUser
+from django.core.signing import SignatureExpired, TimestampSigner
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
@@ -59,18 +57,14 @@ class UserImage(models.Model):
 
 
 class TemporaryLink(models.Model):
-    key = models.UUIDField(
-        default=uuid.uuid1,
-        editable=False,
-        help_text='Universally-unique Identifier. Uses UUID1 as this improves uniqueness and tracking between links',
-        unique=True
-    )
+    key = models.CharField(_("Key"), max_length=200, primary_key=True)
     image = models.ForeignKey(UserImage, related_name='temporary_links', on_delete=models.CASCADE)
-    expiry_date = models.DateTimeField(
-        _('Expiration date'),
-        help_text=_("Date on which the Link is no longer effective."),
-    )
 
     @property
     def is_expired(self) -> bool:
-        return self.expiry_date < timezone.now()
+        signer = TimestampSigner()
+        try:
+            signer.unsign_object(self.key, max_age=signer.unsign_object(self.key)['max_age'])
+        except SignatureExpired:
+            return True
+        return False

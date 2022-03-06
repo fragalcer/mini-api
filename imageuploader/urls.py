@@ -6,6 +6,6 @@ from . import views
 
 urlpatterns = [
     path('user-images/', views.UserImageListCreateAPIView.as_view(), name='user-images'),
-    path('temporary-url/<int:iid>/<uuid:key>/', views.TemporaryURLView.as_view(), name='expirable-image-template')
+    path('temporary-url/<path:key>/', views.TemporaryURLView.as_view(), name='temporary-url')
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
